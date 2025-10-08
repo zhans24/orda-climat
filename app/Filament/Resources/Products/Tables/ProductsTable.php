@@ -6,6 +6,7 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Tables\Columns\IconColumn;
+use Filament\Tables\Columns\SpatieMediaLibraryImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
@@ -15,6 +16,12 @@ class ProductsTable
     {
         return $table
             ->columns([
+                SpatieMediaLibraryImageColumn::make('images')
+                ->collection('images')
+                    ->conversion('webp')
+                    ->square()
+                    ->limit(1)
+                    ->width(150)->height(150),
                 TextColumn::make('category.name')
                     ->searchable(),
                 TextColumn::make('name')

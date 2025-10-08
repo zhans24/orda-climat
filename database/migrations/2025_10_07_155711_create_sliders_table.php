@@ -13,6 +13,7 @@ return new class extends Migration {
             $t->string('subtitle')->nullable();
             $t->string('link')->nullable();
             $t->unsignedInteger('position')->default(0);
+            $t->string('image_path')->nullable();
             $t->boolean('is_active')->default(true);
             $t->timestamps();
         });
