@@ -33,8 +33,10 @@ class ItemsRelationManager extends RelationManager
                     $p = Product::find($state);
                     if ($p) {
                         $set('name', $p->name);
-                        $set('sku', $p->sku);
+                        $set('code', $p->code);
                         $set('price', $p->price);
+                        // можно сразу пересчитать сумму
+                        $set('sum', (float)$p->price * (float)($this->data['quantity'] ?? 1));
                     }
                 }),
 
@@ -43,29 +45,38 @@ class ItemsRelationManager extends RelationManager
                 ->required()
                 ->maxLength(255),
 
-            TextInput::make('sku')
-                ->label('SKU')
+            TextInput::make('code')
+                ->label('CODE')
                 ->maxLength(255),
 
-            TextInput::make('qty')
+            TextInput::make('quantity')
                 ->label('Кол-во')
                 ->numeric()
                 ->minValue(1)
                 ->default(1)
-                ->required(),
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    $set('sum', (float)$state * (float)$get('price'));
+                }),
 
             TextInput::make('price')
                 ->label('Цена')
                 ->numeric()
                 ->prefix('₸')
-                ->required(),
+                ->required()
+                ->live()
+                ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                    $set('sum', (float)$state * (float)$get('quantity'));
+                }),
 
             TextInput::make('sum')
                 ->label('Сумма')
                 ->numeric()
                 ->prefix('₸')
                 ->readOnly()
-                ->helperText('Пересчитывается как qty × price при сохранении.'),
+                ->dehydrated(true)
+                ->helperText('Пересчитывается как quantity × price'),
         ])->columns(2);
     }
 
@@ -75,20 +86,32 @@ class ItemsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('name')->label('Товар')->limit(40)->searchable(),
-                TextColumn::make('sku')->label('SKU')->toggleable(),
-                TextColumn::make('qty')->label('Кол-во'),
+                TextColumn::make('code')->label('code')->toggleable(),
+                TextColumn::make('quantity')->label('Кол-во'),
                 TextColumn::make('price')->label('Цена')->money('KZT'),
                 TextColumn::make('sum')->label('Сумма')->money('KZT'),
             ])
-            ->filters([
-                // при необходимости добавим фильтры по товару/цене/дате
-            ])
             ->headerActions([
-                CreateAction::make(),
+                CreateAction::make()
+                    ->after(function () {
+                        $this->getOwnerRecord()->recalcTotal();
+                        $this->getOwnerRecord()->refresh();
+                        $this->dispatch('$refresh');
+                    }),
             ])
             ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
+                EditAction::make()
+                    ->after(function () {
+                        $this->getOwnerRecord()->recalcTotal();
+                        $this->getOwnerRecord()->refresh();
+                        $this->dispatch('$refresh');
+                    }),
+                DeleteAction::make()
+                    ->after(function () {
+                        $this->getOwnerRecord()->recalcTotal();
+                        $this->getOwnerRecord()->refresh();
+                        $this->dispatch('$refresh');
+                    }),
             ])
             ->toolbarActions([
                 BulkActionGroup::make([

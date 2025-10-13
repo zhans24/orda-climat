@@ -6,7 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Lead extends Model
 {
-    protected $fillable = [
-        'name','phone','email','message','source','status',
+    protected $fillable = ['name','phone','message','status'];
+
+    protected $casts = [
+        'status' => 'string',
     ];
 }

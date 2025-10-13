@@ -2,10 +2,8 @@
 
 namespace App\Filament\Resources\Leads\Schemas;
 
-use Filament\Forms\Components\Select;
-use Filament\Forms\Components\Textarea;
-use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
+use Filament\Forms\Components\{ TextInput, Textarea, Select };
 
 class LeadForm
 {
@@ -13,11 +11,9 @@ class LeadForm
     {
         return $schema->components([
             TextInput::make('name')->label('Имя'),
-            TextInput::make('phone')->label('Телефон'),
-            TextInput::make('email')->email(),
-            Textarea::make('message')->label('Сообщение')->rows(4)->columnSpanFull(),
-            TextInput::make('source')->label('Источник')->placeholder('landing / footer / whatsapp'),
-            Select::make('status')
+            TextInput::make('phone')->label('Телефон')->required(),
+            Textarea::make('message')->label('Сообщение')->rows(5)->columnSpanFull(),
+            Select::make('status')->label('Статус')
                 ->options([
                     'new'         => 'Новая',
                     'in_progress' => 'В работе',

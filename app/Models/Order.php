@@ -21,11 +21,24 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    protected static function booted()
+    protected static function booted(): void
     {
-        static::creating(function ($order) {
-            $lastId = (static::max('id') ?? 0) + 1;
-            $order->number = 'ORD-'.now()->format('Y').'-'.str_pad($lastId, 5, '0', STR_PAD_LEFT);
+        static::creating(function (Order $order) {
+            if (empty($order->number)) {
+                $order->number = 'ORD-' . now()->format('YmdHis') . '-' . str()->upper(str()->random(4));
+            }
+            if ($order->total === null) {
+                $order->total = 0;
+            }
         });
+    }
+
+    // Вызывается из событий OrderItem
+    public function recalcTotal(): void
+    {
+        $sum = (float) $this->items()->sum('sum');
+        if ((float) $this->total !== $sum) {
+            $this->forceFill(['total' => $sum])->saveQuietly();
+        }
     }
 }

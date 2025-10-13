@@ -18,7 +18,7 @@ class LeadResource extends Resource
 {
     protected static ?string $model = Lead::class;
 
-    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedRectangleStack;
+    protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedClipboardDocumentCheck;
     protected static ?string $navigationLabel = 'Заявки';
     protected static ?string $modelLabel = 'Заявка';
     protected static ?string $pluralModelLabel = 'Заявки';
