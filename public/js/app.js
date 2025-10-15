@@ -112,61 +112,59 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         //отображаем добавленный товар в корзине
         const renderCartItem = ({ id, articul, name, totalprice, price, src, quantity, href, montage, montageBox }) => {
-          const cartItemDOMElement = document.createElement('tr');
-          if (articul === null) {
-              articul = '';
-          }
-          totalprice = totalprice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-          price = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-          let montageFlag = montage == '1' ? 'checked' : '';
-          const cartItemTemplate = `
-            <tr>
-              <td>
-                <div class="basket__image">
-                  <img src="${src}" alt="">
-                </div>
-              </td>
-              <td>
-                <div class="basket__desc">
-                  <div class="basket__name">${name}</div>
-                  <div class="basket__art">Арт: ${articul}</div>
-                </div>
-              </td>
-              <td>
-                <div class="basket__price">${price} Т</div>
-              </td>
-              <td>
-                <div class="basket__counter">
-                  <button type="button" class="js-minus">
-                    <svg width="6" height="2" viewBox="0 0 6 2" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M0 1.33333V0H6V1.33333H0Z" fill="#FF6600"/>
-                    </svg>
-                  </button>
-                  <span class="js-cart-item-quantity">${quantity}</span>
-                  <button type="button" class="js-plus">
-                    <svg width="7" height="8" viewBox="0 0 7 8" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M2.80023 7.25336V4.72003H0.240234V3.22669H2.80023V0.693359H4.32023V3.22669H6.88024V4.72003H4.32023V7.25336H2.80023Z" fill="#FF6600"/>
-                    </svg>
-                  </button>
-                </div>
-              </td>
-              <td>
-                <div class="basket__montage">
-                  <input type="checkbox" class="js-montage" ${montageFlag} name="montage">
-                </div>
-              </td>
-              <td>
-                <div class="basket__totalprice js-cart-item-totalprice"><span>${totalprice}</span> Т</div>
-              </td>
-            </tr>
-          `;
-          cartItemDOMElement.innerHTML = cartItemTemplate;
-          cartItemDOMElement.setAttribute('data-id', id);
-          cartItemDOMElement.classList.add('busket__item');
-          cartDOMElement.appendChild(cartItemDOMElement);
-          totalBusket();
-          updateCart();
-        }
+            const cartItemDOMElement = document.createElement('tr');
+            if (articul === null) articul = '';
+            totalprice = totalprice.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            price = price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+            let montageFlag = montage == '1' ? 'checked' : '';
+
+            cartItemDOMElement.innerHTML = `
+    <td>
+      <div class="basket__image">
+        <img src="${src}" alt="">
+      </div>
+    </td>
+    <td>
+      <div class="basket__desc">
+        <div class="basket__name">${name}</div>
+        <div class="basket__art">Арт: ${articul}</div>
+      </div>
+    </td>
+    <td>
+      <div class="basket__price">${price} Т</div>
+    </td>
+    <td>
+      <div class="basket__counter">
+        <button type="button" class="js-minus">
+          <svg width="6" height="2" viewBox="0 0 6 2" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 1.33333V0H6V1.33333H0Z" fill="#FF6600"/>
+          </svg>
+        </button>
+        <span class="js-cart-item-quantity">${quantity}</span>
+        <button type="button" class="js-plus">
+          <svg width="7" height="8" viewBox="0 0 7 8" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2.80023 7.25336V4.72003H0.240234V3.22669H2.80023V0.693359H4.32023V3.22669H6.88024V4.72003H4.32023V7.25336H2.80023Z" fill="#FF6600"/>
+          </svg>
+        </button>
+      </div>
+    </td>
+    <td>
+      <div class="basket__montage">
+        <input type="checkbox" class="js-montage" ${montageFlag} name="montage">
+      </div>
+    </td>
+    <td>
+      <div class="basket__totalprice js-cart-item-totalprice"><span>${totalprice}</span> Т</div>
+    </td>
+  `;
+
+            cartItemDOMElement.setAttribute('data-id', id);
+            cartItemDOMElement.classList.add('busket__item');
+            cartDOMElement.appendChild(cartItemDOMElement);
+
+            totalBusket();
+            updateCart();
+        };
 
         //сохраняем товар в LocalStorage
         const saveCart = () => {
@@ -382,8 +380,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const newQuantity = +(cart[id].quantity) - 1;
             if (newQuantity >= 1) {
                 updateQuantityTotalPrice(id, newQuantity);
+            } else {
+                // удалить строку и товар из корзины
+                const row = cartDOMElement.querySelector(`[data-id="${id}"]`);
+                if (row) row.remove();
+                delete cart[id];
+                updateCart();
+                totalBusket();
+                totalBusketHeader();
+                clearBusket();
+                requestTable();
             }
-        }
+        };
+
 
         //Добавление в корзину
         const addCartItem = (data) => {
@@ -463,6 +472,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
             document.querySelector('body').addEventListener('click', (e) => {
                 const target = e.target;
+                // внутри document.querySelector('body').addEventListener('click', (e) => { ... });
+                if (target.classList.contains('js-clear-cart')) {
+                    e.preventDefault();
+                    // чистим localStorage
+                    clearLocalStorage();
+                    // чистим текущий объект корзины, чтобы saveCart() не вернул всё назад
+                    Object.keys(cart).forEach(k => delete cart[k]);
+                    updateCart();
+
+                    // чистим DOM
+                    if (cartDOMElement) cartDOMElement.innerHTML = '';
+                    totalBusket();
+                    clearBusket();
+                    totalBusketHeader();
+                    requestTable();
+                }
+
                 //В корзину
                 if (target.classList.contains('js-buy')) {
                     e.preventDefault();
@@ -859,7 +885,7 @@ for (let item of alertClose) {
     })
 }
 
-// --- lightweight success + close modal (без изменения HTML формы) ---
+// --- MODAL: валидация, красивые ошибки и тосты ---
 (function () {
     const modal = document.querySelector('.modal.js-modal');
     if (!modal) return;
@@ -869,61 +895,392 @@ for (let item of alertClose) {
 
     const submitBtn = form.querySelector('button[type="submit"]');
     const block = form.querySelector('.modal__block') || form;
-    // чтобы перекрытие легло поверх блока формы
-    if (getComputedStyle(block).position === 'static') {
-        block.style.position = 'relative';
+    if (getComputedStyle(block).position === 'static') block.style.position = 'relative';
+
+    const okToast = document.createElement('div');
+    okToast.className = 'mini-check mini-check--hidden';
+    okToast.innerHTML = '<span class="mini-check__icon">✓</span><span class="mini-check__text">Отправлено</span>';
+    block.appendChild(okToast);
+
+    // ✱ общий тост (ошибки/инфо)
+    function showMiniToast(msg, type = 'error') {
+        let t = document.querySelector('.mini-toast');
+        if (!t) {
+            t = document.createElement('div');
+            t.className = 'mini-toast';
+            document.body.appendChild(t);
+        }
+        t.textContent = msg;
+        t.classList.remove('mini-toast--ok', 'mini-toast--error', 'mini-toast--show');
+        t.classList.add(type === 'ok' ? 'mini-toast--ok' : 'mini-toast--error');
+        // перезапуск анимации
+        // eslint-disable-next-line no-unused-expressions
+        t.offsetHeight;
+        t.classList.add('mini-toast--show');
+        setTimeout(() => t.classList.remove('mini-toast--show'), 2500);
     }
 
-    // создаём крошечный оверлей с галочкой (✓) — без тяжёлых анимаций
-    const toast = document.createElement('div');
-    toast.className = 'mini-check mini-check--hidden';
-    toast.innerHTML = '<span class="mini-check__icon">✓</span><span class="mini-check__text">Отправлено</span>';
-    block.appendChild(toast);
-
-    function showCheckAndClose() {
-        toast.classList.remove('mini-check--hidden');
-        toast.classList.add('mini-check--show');
-
+    function showSuccessAndClose() {
+        okToast.classList.remove('mini-check--hidden');
+        okToast.classList.add('mini-check--show');
         setTimeout(() => {
-            // скрыть оверлей
-            toast.classList.add('mini-check--hidden');
-            toast.classList.remove('mini-check--show');
-
-            // закрыть модалку (подстрой под свою логику открытия/закрытия)
-            modal.classList.remove('active');   // если у тебя показ через класс .active
-            modal.style.display = 'none';       // жёсткое скрытие на всякий случай
-            document.documentElement.classList.remove('no-scroll'); // если блокируешь скролл
+            okToast.classList.add('mini-check--hidden');
+            okToast.classList.remove('mini-check--show');
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            document.documentElement.classList.remove('no-scroll');
         }, 1200);
     }
 
+    // ---- валидация
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
+    // простая проверка телефона: >= 10 цифр
+    const onlyDigits = s => (s || '').replace(/\D+/g, '');
+    function setError(input, message) {
+        input.classList.add('input--error');
+        let hint = input.parentElement.querySelector('.field-error');
+        if (!hint) {
+            hint = document.createElement('div');
+            hint.className = 'field-error';
+            input.parentElement.appendChild(hint);
+        }
+        hint.textContent = message;
+    }
+    function clearError(input) {
+        input.classList.remove('input--error');
+        const hint = input.parentElement.querySelector('.field-error');
+        if (hint) hint.textContent = '';
+    }
+
+    function validate(form) {
+        const fields = Array.from(form.querySelectorAll('[required], [data-required]'));
+        let firstBad = null;
+        fields.forEach(el => clearError(el));
+
+        fields.forEach(el => {
+            const val = (el.value || '').trim();
+            const type = (el.getAttribute('type') || el.tagName).toLowerCase();
+
+            if (!val) {
+                setError(el, 'Поле обязательно для заполнения');
+                if (!firstBad) firstBad = el;
+                return;
+            }
+            if (type === 'email' && !EMAIL_RE.test(val)) {
+                setError(el, 'Введите корректный e-mail');
+                if (!firstBad) firstBad = el;
+                return;
+            }
+            if (type === 'tel' && onlyDigits(val).length < 10) {
+                setError(el, 'Введите корректный телефон');
+                if (!firstBad) firstBad = el;
+                return;
+            }
+        });
+
+        if (firstBad) {
+            firstBad.focus({ preventScroll: true });
+            firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            showMiniToast('Заполните обязательные поля', 'error');
+            return false;
+        }
+        return true;
+    }
+
+    // очистка ошибок по вводу
+    form.addEventListener('input', e => {
+        const el = e.target;
+        if (el.matches('[required], [data-required]')) {
+            if ((el.value || '').trim().length > 0) clearError(el);
+        }
+    });
+
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
+        if (!validate(form)) return;
 
         const action = form.getAttribute('action') || window.location.href;
         const data = new FormData(form);
-        const csrf = data.get('_token') || '';
+        const csrf = data.get('_token') || document.querySelector('meta[name="csrf-token"]')?.content || '';
 
         if (submitBtn) submitBtn.disabled = true;
 
         try {
             const res = await fetch(action, {
                 method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json'
-                },
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
                 body: data
             });
+
+            // Если бэк вернул 422 с ошибками — красиво подсветим
+            if (res.status === 422) {
+                const j = await res.json().catch(() => ({}));
+                const errs = j?.errors || {};
+                Object.entries(errs).forEach(([name, messages]) => {
+                    const el = form.querySelector(`[name="${name}"]`);
+                    if (el) setError(el, Array.isArray(messages) ? messages[0] : String(messages));
+                });
+                showMiniToast('Исправьте ошибки в форме', 'error');
+                return;
+            }
 
             if (!res.ok) throw new Error('Server error');
 
             form.reset();
-            showCheckAndClose();
+            showSuccessAndClose();
+            showMiniToast('Заявка отправлена', 'ok');
         } catch (err) {
             console.error(err);
-            alert('Не удалось отправить. Попробуйте ещё раз.');
+            showMiniToast('Не удалось отправить. Попробуйте ещё раз.', 'error');
         } finally {
             if (submitBtn) submitBtn.disabled = false;
         }
+    });
+})();
+
+// ====== Корзина: логика под твою верстку ======
+(function () {
+    const CART_KEY = 'ordaKlimatCart';
+    const fmt = n => Math.round(+n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+    // === storage helpers
+    function loadCart() {
+        try { return JSON.parse(localStorage.getItem(CART_KEY) || '{}'); }
+        catch { return {}; }
+    }
+    function saveCart(obj) { localStorage.setItem(CART_KEY, JSON.stringify(obj)); }
+    function clearCart() { localStorage.removeItem(CART_KEY); }
+
+    // === UI helpers
+    function updateHeaderCounter() {
+        const el = document.querySelector('.header__basket span');
+        if (!el) return;
+        const cart = loadCart();
+        const total = Object.keys(cart).reduce((s, id) => s + (+cart[id].quantity || 0), 0);
+        el.textContent = total;
+        el.classList.toggle('active', total > 1);
+    }
+
+    function renderTable() {
+        const tbody = document.querySelector('.js-cart');
+        const empty = document.querySelector('.empty');
+        if (!tbody) return;
+
+        const cart = loadCart();
+        const ids = Object.keys(cart);
+
+        tbody.innerHTML = '';
+        if (!ids.length) {
+            if (empty) empty.style.display = '';
+            updateTotals();
+            updateHeaderCounter();
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+
+        ids.forEach(id => {
+            const it = cart[id] || {};
+            const q = +it.quantity || 1;
+            const price = +it.price || 0;
+            const sum = price * q;
+
+            tbody.insertAdjacentHTML('beforeend', `
+        <tr data-id="${id}" class="busket__item">
+          <td>
+            <div class="basket__image">
+              <img src="${it.src || ''}" alt="">
+            </div>
+          </td>
+          <td>
+            <div class="basket__desc">
+              <div class="basket__name">${it.name || ''}</div>
+              <div class="basket__art">Арт: ${it.articul || ''}</div>
+            </div>
+          </td>
+          <td><div class="basket__price">${fmt(price)} Т</div></td>
+          <td>
+            <div class="basket__counter">
+              <button type="button" class="js-minus">
+                <svg width="6" height="2" viewBox="0 0 6 2" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 1.33333V0H6V1.33333H0Z" fill="#FF6600"/></svg>
+              </button>
+              <span class="js-cart-item-quantity">${q}</span>
+              <button type="button" class="js-plus">
+                <svg width="7" height="8" viewBox="0 0 7 8" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.80023 7.25336V4.72003H0.240234V3.22669H2.80023V0.693359H4.32023V3.22669H6.88024V4.72003H4.32023V7.25336H2.80023Z" fill="#FF6600"/></svg>
+              </button>
+            </div>
+          </td>
+          <td>
+            <div class="basket__montage">
+              <input type="checkbox" class="js-montage" ${it.montage === '1' ? 'checked' : ''}>
+            </div>
+          </td>
+          <td><div class="basket__totalprice js-cart-item-totalprice"><span>${fmt(sum)}</span> Т</div></td>
+        </tr>
+      `);
+        });
+
+        updateTotals();
+        updateHeaderCounter();
+    }
+
+    function currentDeliveryPrice() {
+        const delivRadio = document.querySelector('.js-deliv-point'); // radio доставки
+        const row = document.querySelector('.js-basket-deliv');       // блок с data-price-deliv
+        if (delivRadio && delivRadio.checked) {
+            const viaRadio = +(delivRadio.dataset.price || 0);
+            const viaRow = +(row?.dataset?.priceDeliv || 0);
+            return viaRadio || viaRow || 0;
+        }
+        return 0;
+    }
+
+    function updateTotals() {
+        const cart = loadCart();
+        const ids = Object.keys(cart);
+        let itemsSum = 0;
+        ids.forEach(id => itemsSum += (+cart[id].price || 0) * (+cart[id].quantity || 1));
+
+        const deliv = currentDeliveryPrice();
+
+        const sumSpan = document.querySelector('.js-cart-total-summa');
+        if (sumSpan) {
+            sumSpan.textContent = `${fmt(itemsSum)} Т`;
+            // поддержка твоего старого js, который читает data-summ:
+            sumSpan.setAttribute('data-summ', `${fmt(itemsSum + deliv)} Т`);
+        }
+
+        const delivText = document.querySelector('.js-basket-deliv .deliv');
+        if (delivText) delivText.textContent = deliv > 0 ? `${fmt(deliv)} Т` : 'Самовывоз';
+
+        const allTotal = document.querySelector('.js-all-total-price');
+        if (allTotal) allTotal.textContent = `${fmt(itemsSum + deliv)} Т`;
+
+        const hiddenDeliv = document.querySelector('.js-delivery-price');
+        if (hiddenDeliv) hiddenDeliv.value = deliv;
+    }
+
+    // === delegates
+    document.addEventListener('click', (e) => {
+        // plus / minus
+        const plus = e.target.closest('.js-plus');
+        const minus = e.target.closest('.js-minus');
+        const clearBtn = e.target.closest('.js-clear-cart');
+
+        if (plus || minus) {
+            const tr = e.target.closest('tr[data-id]');
+            if (!tr) return;
+            const id = tr.dataset.id;
+            const cart = loadCart();
+            if (!cart[id]) return;
+
+            if (plus) {
+                cart[id].quantity = (+cart[id].quantity || 1) + 1;
+            } else if (minus) {
+                const nextQ = (+cart[id].quantity || 1) - 1;
+                if (nextQ <= 0) {
+                    delete cart[id];
+                } else {
+                    cart[id].quantity = nextQ;
+                }
+            }
+            saveCart(cart);
+            renderTable();
+        }
+
+        if (clearBtn) {
+            clearCart();
+            renderTable();
+        }
+    });
+
+    document.addEventListener('change', (e) => {
+        // монтаж чекбокс
+        if (e.target.classList.contains('js-montage')) {
+            const tr = e.target.closest('tr[data-id]');
+            const id = tr?.dataset.id;
+            const cart = loadCart();
+            if (id && cart[id]) {
+                cart[id].montage = e.target.checked ? '1' : '0';
+                saveCart(cart);
+            }
+        }
+
+        // доставка
+        if (e.target.classList.contains('js-radio-delivery')) {
+            updateTotals();
+        }
+    });
+
+    // === submit adapter: формирует payload и шлёт AJAX’ом на orders.store
+    window.submitOrderFromLS = async function (event) {
+        event.preventDefault();
+
+        const cart = loadCart();
+        const ids = Object.keys(cart);
+        if (!ids.length) {
+            // можно заменить на красивый тост, если уже есть
+            alert('Корзина пуста');
+            return false;
+        }
+
+        const items = ids.map(id => ({
+            product_id: cart[id].id ?? null,
+            name:       cart[id].name ?? '',
+            code:       cart[id].articul ?? null,
+            price:     +cart[id].price || 0,
+            quantity:  +cart[id].quantity || 1,
+            montage:    cart[id].montage === '1' ? 1 : 0,
+        }));
+
+        const form = event.target.closest('form');
+        if (!form) return false;
+
+        // доставка
+        const deliv = currentDeliveryPrice();
+        const hiddenDeliv = form.querySelector('.js-delivery-price');
+        const hiddenItems = form.querySelector('.js-items-json');
+        if (hiddenDeliv) hiddenDeliv.value = deliv;
+        if (hiddenItems) hiddenItems.value = JSON.stringify(items);
+
+        // собираем FormData
+        const fd = new FormData(form);
+
+        // если бэку удобнее items[] вместо items_json — развернём:
+        try {
+            const parsed = JSON.parse(fd.get('items_json') || '[]');
+            fd.delete('items_json');
+            parsed.forEach((row, i) => {
+                Object.entries(row).forEach(([k, v]) => fd.append(`items[${i}][${k}]`, v));
+            });
+        } catch (_) { /* оставим как есть */ }
+
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
+        try {
+            const res = await fetch(form.action, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                body: fd
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok || data?.ok === false) throw new Error('order failed');
+
+            clearCart();
+            renderTable();
+            // успех — редиректим домой или на «спасибо»
+            window.location.href = '/';
+        } catch (err) {
+            console.error(err);
+            alert('Не удалось оформить заказ. Попробуйте позже.');
+        }
+
+        return false;
+    };
+
+    // init
+    document.addEventListener('DOMContentLoaded', () => {
+        renderTable();
+        updateTotals();
+        updateHeaderCounter();
     });
 })();

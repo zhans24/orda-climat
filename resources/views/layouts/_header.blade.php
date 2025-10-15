@@ -53,7 +53,7 @@
                     </ul>
                 </nav>
 
-                <a href="#" class="header__basket">
+                <a href="{{ route('basket') }}" class="header__basket">
                     <img src="{{ asset('img/basket-icon.png') }}" alt="">
                     <span>{{ session('cart.count', 0) }}</span>
                 </a>

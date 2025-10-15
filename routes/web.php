@@ -6,7 +6,7 @@ use App\Http\Controllers\Front\HomeController;
 use App\Http\Controllers\Front\PageController;
 use App\Http\Controllers\Front\CategoryController;
 use App\Http\Controllers\Front\ProductController;
-
+use App\Http\Controllers\Front\OrderController;
 
 // Главная
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -17,20 +17,26 @@ Route::get('/delivery',     [PageController::class, 'show'])->name('delivery')->
 Route::get('/install/ac',   [PageController::class, 'show'])->name('install.ac')->defaults('slug', 'install-ac');
 Route::get('/install/vent', [PageController::class, 'show'])->name('install.vent')->defaults('slug', 'install-vent');
 Route::get('/contacts',     [PageController::class, 'show'])->name('contacts')->defaults('slug', 'contacts');
+Route::get('/privacy', [PageController::class, 'show'])->name('privacy')->defaults('slug', 'privacy');
 
 // Каталог
+Route::get('/catalogs', [CategoryController::class, 'all'])->name('categories.all');
 Route::get('/catalog', [CategoryController::class, 'index'])->name('catalog.index');
 Route::get('/catalog/{slug}', [CategoryController::class, 'show'])->name('category.show');
 
 // Товар
-Route::get('/product/{slug}', [ProductController::class, 'show'])->name('catalog.product');
+
+Route::get('/product/{product:slug}', [ProductController::class, 'show'])
+    ->name('product.show');
 
 
 Route::post('/lead/store', [LeadController::class, 'store'])->name('lead.store');
 
-Route::get('/catalogs', [CategoryController::class, 'all'])->name('categories.all');
-// routes/web.php
-Route::get('/privacy', [PageController::class, 'show'])
-    ->name('privacy')
-    ->defaults('slug', 'privacy');
+
+// страница корзины
+Route::view('/cart', 'pages.basket')->name('basket');
+
+// оформление заказа
+Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
+
 

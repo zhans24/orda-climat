@@ -2,17 +2,18 @@
 
 namespace App\Filament\Resources\Orders\Tables;
 
+use App\Filament\Resources\Orders\Schemas\OrderForm;
 use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
-use Filament\Tables;
-use Filament\Tables\Table;
-use Filament\Tables\Columns\TextColumn;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\TextInput;
+use Filament\Tables;
+use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\Filter;
 use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 
 class OrdersTable
@@ -23,15 +24,58 @@ class OrdersTable
             ->defaultSort('created_at', 'desc')
             ->persistFiltersInSession()
             ->columns([
-                TextColumn::make('number')->label('№')->sortable()->searchable(),
-                TextColumn::make('customer_name')->label('Клиент')->searchable(),
-                TextColumn::make('customer_phone')->label('Телефон')->searchable(),
-                TextColumn::make('customer_email')->label('Email')->searchable(),
-                TextColumn::make('status')->label('Статус')
+                TextColumn::make('number')
+                    ->label('№')
+                    ->sortable()
+                    ->searchable()
+                    ->copyable()
+                    ->copyMessage('Скопировано'),
+
+                TextColumn::make('customer_name')
+                    ->label('Клиент')
+                    ->searchable()
+                    ->toggleable(),
+
+                TextColumn::make('customer_phone')
+                    ->label('Телефон')
+                    ->searchable()
+                    ->toggleable(),
+
+                TextColumn::make('shipping_address')
+                    ->label('Адрес')
+                    ->getStateUsing(fn ($record) => trim(
+                        implode(', ', array_filter([
+                            data_get($record->shipping_address, 'city'),
+                            data_get($record->shipping_address, 'address'),
+                        ]))
+                    ))
+                    ->searchable()
+                    ->toggleable(),
+
+                TextColumn::make('delivery_method')
+                    ->label('Доставка')
+                    ->badge()
+                    ->formatStateUsing(fn ($state) => $state === 'delivery' ? 'Доставка' : 'Самовывоз')
+                    ->colors([
+                        'success' => 'pickup',
+                        'info'    => 'delivery',
+                    ])
+                    ->sortable(),
+
+                // новый столбец: стоимость доставки
+                TextColumn::make('delivery_price')
+                    ->label('₸ Доставка')
+                    ->getStateUsing(fn ($record) => (float) data_get($record->shipping_address, 'delivery_price', 0))
+                    ->money('KZT', true)
+                    ->toggleable(),
+
+                TextColumn::make('status')
+                    ->label('Статус')
                     ->badge()
                     ->colors([
                         'warning' => 'new',
                         'info'    => 'processing',
+                        'primary' => 'paid',
                         'indigo'  => 'picking',
                         'cyan'    => 'shipped',
                         'purple'  => 'installed',
@@ -39,21 +83,21 @@ class OrdersTable
                         'danger'  => 'canceled',
                     ])
                     ->sortable(),
-                TextColumn::make('total')->label('Сумма')->money('KZT')->sortable(),
-                TextColumn::make('created_at')->label('Создан')->dateTime('d.m.Y H:i')->sortable(),
+
+                TextColumn::make('total')
+                    ->label('Сумма')
+                    ->money('KZT', true)
+                    ->sortable(),
+
+                TextColumn::make('created_at')
+                    ->label('Создан')
+                    ->dateTime('d.m.Y H:i')
+                    ->sortable(),
             ])
             ->filters([
                 SelectFilter::make('status')
                     ->label('Статус')
-                    ->options([
-                        'new' => 'Новый',
-                        'processing' => 'В обработке',
-                        'picking' => 'Сборка',
-                        'shipped' => 'Отправлен',
-                        'installed' => 'Установлен',
-                        'closed' => 'Закрыт',
-                        'canceled' => 'Отменён',
-                    ]),
+                    ->options(OrderForm::STATUSES),
 
                 Filter::make('total_range')
                     ->label('Сумма (от/до)')
@@ -96,7 +140,7 @@ class OrdersTable
                     ->indicateUsing(function (array $data): ?string {
                         $from = $data['from'] ?? null;
                         $to = $data['to'] ?? null;
-                        if (! $from && ! $to) return null;
+                        if (!$from && !$to) return null;
                         return 'Дата: ' . ($from ? "с {$from}" : '') . ($to ? " по {$to}" : '');
                     }),
             ])

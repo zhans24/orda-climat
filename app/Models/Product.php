@@ -15,22 +15,30 @@ class Product extends Model implements HasMedia
     use InteractsWithMedia;
 
     protected $fillable = [
-        'category_id','name','slug','sku','price',
-        'is_active','is_available','short','description',
-        'meta_title','meta_description','attributes',
+        'category_id', 'name', 'slug', 'sku', 'price',
+        'is_active', 'is_available', 'description',
+        'meta_title', 'meta_description', 'specifications',
     ];
 
     protected $casts = [
-        'is_active'   => 'bool',
-        'is_featured' => 'bool',
-        'price'       => 'integer',
-        'attributes'  => 'array',
+        'is_active'     => 'bool',
+        'is_available'  => 'bool',
+        'price'         => 'decimal:2',
+        'specifications'         => 'array',
     ];
 
-    public function category(): BelongsTo { return $this->belongsTo(Category::class); }
+    // Relations
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     // Scopes
-    public function scopeActive(Builder $q): Builder { return $q->where('is_active', true); }
+    public function scopeActive(Builder $q): Builder
+    {
+        return $q->where('is_active', true);
+    }
+
     public function scopeInCategoryTree(Builder $q, Category $cat): Builder
     {
         $ids = Category::descendantsAndSelf($cat->id)->pluck('id');
@@ -38,30 +46,38 @@ class Product extends Model implements HasMedia
     }
 
     // SEO
-    public function getSeoTitleAttribute(): string { return $this->meta_title ?: $this->name; }
+    public function getSeoTitleAttribute(): string
+    {
+        return $this->meta_title ?: $this->name;
+    }
+
     public function getSeoDescriptionAttribute(): string
     {
-        $base = $this->meta_description ?: ($this->short ?: strip_tags((string) $this->description));
+        $base = $this->meta_description
+            ?: ($this->description ? strip_tags((string) $this->description) : $this->name);
+
         return (string) str($base)->limit(160);
     }
 
-    // Media
-    public function registerMediaCollections(): void { $this->addMediaCollection('cover')->singleFile(); }
+    // Media (Spatie)
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('cover')->singleFile();
+        $this->addMediaCollection('gallery');
+    }
+
     public function registerMediaConversions(?Media $media = null): void
     {
         $this->addMediaConversion('thumb')->format('webp')->fit(Fit::Crop, 400, 300)->nonQueued();
         $this->addMediaConversion('card')->format('webp')->fit(Fit::Contain, 800, 600)->nonQueued();
         $this->addMediaConversion('xl')->format('webp')->fit(Fit::Contain, 1600, 1200)->nonQueued();
     }
+
     public function getImageUrlAttribute(): ?string
     {
-        // сначала пытаемся отдать конверсию 'card' из коллекции 'cover'
         $url = $this->getFirstMediaUrl('cover', 'card');
-        if (!empty($url)) {
-            return $url;
-        }
+        if ($url) return $url;
 
-        // если конверсия не создана, отдаем оригинал из 'cover'
         $url = $this->getFirstMediaUrl('cover');
         return $url ?: null;
     }

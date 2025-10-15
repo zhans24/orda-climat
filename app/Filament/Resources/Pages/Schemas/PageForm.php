@@ -32,7 +32,7 @@ class PageForm
                     ]),
                     Toggle::make('is_published')->label('Опубликовано')->default(true),
                 ])
-                ->columnSpanFull(),
+                ->columnSpanFull()->visible(false),
 
             // ===================== О КОМПАНИИ (about) =====================
             Section::make('О компании')
@@ -138,8 +138,50 @@ class PageForm
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('template') === 'home'),
 
+            // app/Filament/Resources/Pages/Schemas/PageForm.php
 
-            // ===================== УСТАНОВКА (install-ac / install-vent) =====================
+            Section::make('Товар: Доставка и оплата')
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('content.product_delivery_title')
+                            ->label('Заголовок блока «Доставка»')
+                            ->default('Доставка')
+                            ->maxLength(120),
+
+                        TextInput::make('content.product_payment_title')
+                            ->label('Заголовок блока «Оплата»')
+                            ->default('Оплата')
+                            ->maxLength(120),
+                    ]),
+
+                    // Свободный редактор — Доставка
+                    RichEditor::make('content.product_delivery_html')
+                        ->label('Текст блока «Доставка»')
+                        ->helperText('Enter — новый абзац, Shift+Enter — перенос строки.')
+                        ->toolbarButtons([
+                            'bold','italic','underline','strike',
+                            'h2','h3','blockquote','orderedList','bulletList',
+                            'link','undo','redo',
+                        ])
+                        ->columnSpanFull(),
+
+                    // Свободный редактор — Оплата
+                    RichEditor::make('content.product_payment_html')
+                        ->label('Текст блока «Оплата»')
+                        ->helperText('Enter — новый абзац, Shift+Enter — перенос строки.')
+                        ->toolbarButtons([
+                            'bold','italic','underline','strike',
+                            'h2','h3','blockquote','orderedList','bulletList',
+                            'link','undo','redo',
+                        ])
+                        ->columnSpanFull(),
+                ])
+                ->columnSpanFull()
+                ->visible(fn ($get) => $get('template') === 'products'),
+
+
+
+        // ===================== УСТАНОВКА (install-ac / install-vent) =====================
             Section::make('Страница установки (тексты и таблица)')
                 ->schema([
                     Grid::make(2)->schema([
@@ -273,6 +315,22 @@ class PageForm
                 ])
                 ->columnSpanFull()
                 ->visible(fn ($get) => $get('template') === 'privacy'),
+            Section::make('Корзина')
+                ->schema([
+                    Grid::make(2)->schema([
+                        TextInput::make('content.delivery_flat_price')
+                            ->label('Фиксированная стоимость доставки')
+                            ->numeric()
+                            ->minValue(0)
+                            ->step(1)
+                            ->suffix('₸')
+                            ->default(5000)
+                            ->helperText('Эта цена будет использоваться в корзине и при оформлении заказа.'),
+                    ]),
+                ])
+                ->columnSpanFull()
+                ->visible(fn ($get) => $get('template') === 'cart'),
+
 
         ]);
     }

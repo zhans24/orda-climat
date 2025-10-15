@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', $page->meta_title ?? $page->title ?? 'OrdaKlimat')</title>
     @if(!empty($page?->meta_description))
         <meta name="description" content="{{ $page->meta_description }}">

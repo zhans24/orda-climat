@@ -13,21 +13,11 @@ class PagesTable
         return $table
             ->defaultSort('id', 'asc')
             ->columns([
-                TextColumn::make('title')->label('Заголовок')->sortable()->searchable(),
-                TextColumn::make('slug')->label('Слаг')->copyable()->sortable(),
-                BadgeColumn::make('template')
-                    ->label('Шаблон')
-                    ->colors([
-                        'primary' => 'about',
-                        'success' => 'home',
-                        'info'    => 'contacts',
-                        'warning' => 'delivery',
-                    ]),
-                IconColumn::make('is_published')->label('Опубл.')->boolean(),
+                TextColumn::make('title')->label('Название страницы')->sortable()->searchable(),
                 TextColumn::make('updated_at')->label('Обновлено')->dateTime('d.m.Y H:i')->sortable(),
             ])
             ->recordActions([
-                EditAction::make()->label('Изменить'),
+                EditAction::make()->label('Изменить данные'),
             ])
             ->filters([])
             ->paginated(false);
